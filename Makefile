@@ -11,8 +11,8 @@ TESTSTRING=ABCDEFG
 .PHONY:run
 
 test: 
-	echo 'bash -e $(TEST-FILE) <<< $(TESTSTRING)'
-	bash -e $(TEST-FILE) <<< $(TESTSTRING)
+	echo 'bash -e $(TEST-FILE) $(TESTSTRING)'
+	bash -e $(TEST-FILE) $(TESTSTRING)
 
 doc: clean $(LOGIN).pdf
 	evince $(LOGIN).pdf &
