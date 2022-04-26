@@ -6,7 +6,7 @@
  */
 #include "pro.h"
 
-Edge::Edge(const char &v1, const char &v2, const bool &fe, const int &rank, const int &world_size){
+Edge::Edge(const char &v1, const char &v2, const bool &fe, const int &rank, const int &world_size) {
     c_v1 = v1;
     c_v2 = v2;
     c_rank = rank;
@@ -17,7 +17,7 @@ Edge::Edge(const char &v1, const char &v2, const bool &fe, const int &rank, cons
     }
 }
 
-void Edge::create_etour(){
+void Edge::create_etour() {
 
     // gather nodes of other edges
     vector<char> v1nodes(c_world_size);
@@ -56,17 +56,18 @@ void Edge::create_etour(){
     }
 }
 
-void Edge::suffix_sum(){
+void Edge::suffix_sum() {
     // gather other weights and etours
     vector<int> weights(c_world_size);
     vector<int> etours(c_world_size);
     MPI_Allgather(&c_weight, 1, MPI_INT, &weights[0], 1, MPI_INT, MPI_COMM_WORLD);
     MPI_Allgather(&c_etour, 1, MPI_INT, &etours[0], 1, MPI_INT, MPI_COMM_WORLD);
 
-    // last edge => 0
+    // last edge -> 0
     c_weight = (c_etour == c_rank) ? 0 : c_weight;
     
-    for (int k = 0;k <= ceil(log(c_world_size));++k){
+    // suffix sum
+    for (int k = 0;k <= ceil(log2(c_world_size));++k){
         c_weight += weights[etours[c_rank]];
         c_etour = etours[etours[c_rank]];
         MPI_Allgather(&c_weight, 1, MPI_INT, &weights[0], 1, MPI_INT, MPI_COMM_WORLD);
@@ -75,11 +76,11 @@ void Edge::suffix_sum(){
     c_weight += weights.back();
 }
 
-void Edge::preorder(const int nodes_count){
+void Edge::print_preorder() {
     // get edge order if it is forward edge
     int preorder_rank = - 1;
     if(c_fe){
-        preorder_rank = nodes_count - c_weight + 1;
+        preorder_rank = c_world_size - c_weight + 1;
     }
 
     if (c_rank == 0){
@@ -89,11 +90,12 @@ void Edge::preorder(const int nodes_count){
         MPI_Gather(&preorder_rank, 1, MPI_INT, &pre_r[0], 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Gather(&c_v2, 1, MPI_CHAR, &pre_v[0], 1, MPI_CHAR, 0, MPI_COMM_WORLD);
         
-        // print first two nodes
-        cout << c_v1 << c_v2;
+        
+        // print first node (root)
+        cout << c_v1;
 
         // search for the rest
-        for (int order = 3; order <= nodes_count; ++order){
+        for (int order = 0; order <= c_world_size; ++order){
             // find index and print node at correct index
             int index = find(pre_r, order);
             if (index != -1){
@@ -106,10 +108,9 @@ void Edge::preorder(const int nodes_count){
         MPI_Gather(&preorder_rank, 1, MPI_INT, NULL, 0, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Gather(&c_v2, 1, MPI_CHAR, NULL, 0, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
-    
 }
 
-int Edge::find(const vector<int> &vec, const int &val){
+int Edge::find(const vector<int> &vec, const int &val) {
     for (int i = 0; i < vec.size(); ++i) {
         if (vec[i] == val){
             return i;
@@ -118,41 +119,39 @@ int Edge::find(const vector<int> &vec, const int &val){
     return -1;
 }
 
-
 Edge::~Edge() {}
 
-void Edge::print_edge(){
-    cout << "E" << c_rank << " = (" << c_v1 << ", " << c_v2 << ") next E" << c_etour << endl;
+void Edge::print_edge() {
+    cout << "E" << c_rank << " = (" << c_v1 << ", " << c_v2 << "),W:" << c_weight << ",next E" << c_etour << endl;
 }
 
 int main(int argc, char** argv) {
     string nodes = argv[1];
 
     MPI_Init(&argc, &argv);
-
     int world_size, rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    bool fe = false;
-
     
+    bool fe = false;
     char v1, v2;
-    if (rank < nodes.size() - 1){
+    // forward edges 
+    if (rank < nodes.size() - 1) {
         v1 = nodes[rank / 2];
         v2 = nodes[rank + 1];
         fe = true;
     }
+    // backward edges
     else {
         int tmp_r = rank - nodes.size() + 1;
         v1 = nodes[tmp_r + 1];
         v2 = nodes[tmp_r / 2];
     }
+
     Edge e(v1, v2, fe, rank, world_size);
     e.create_etour();
     e.suffix_sum();
-    e.preorder(nodes.size());
-
+    e.print_preorder();
 
     MPI_Finalize();
 }

@@ -16,8 +16,8 @@ let "PROCESSES = (2 * $SIZE) - 2"
 mpic++ -o $PROJ $SRC $HDR
 
 # spusteni
-#mpirun -oversubscribe -np $PROCESSES ./$PROJ $STRING
-mpirun -np $PROCESSES ./$PROJ $STRING
+mpirun -oversubscribe -np $PROCESSES ./$PROJ $STRING
+#mpirun -np $PROCESSES ./$PROJ $STRING
 
 # uklid
 rm -f $PROJ

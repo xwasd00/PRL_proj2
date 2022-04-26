@@ -20,7 +20,7 @@ doc: clean $(LOGIN).pdf
 merlin: pack
 	ssh merlin "mkdir -p $(TMPDIR)"
 	scp $(LOGIN).zip merlin:$(TMPDIR)
-	ssh merlin "PATH=$$PATH:/usr/local/share/OpenMPI/bin && cd $(TMPDIR) && unzip -oqq $(LOGIN).zip && echo 'bash -e $(TEST-FILE)' && bash -e $(TEST-FILE)"
+	ssh merlin "PATH=$$PATH:/usr/local/share/OpenMPI/bin && cd $(TMPDIR) && unzip -oqq $(LOGIN).zip && echo 'bash -e $(TEST-FILE) $(TESTSTRING)' && bash -e $(TEST-FILE) $(TESTSTRING)"
 	ssh merlin "rm -rf $(TMPDIR)"
 
 pack: $(LOGIN).pdf

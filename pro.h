@@ -12,13 +12,12 @@
 using namespace std;
 MPI_Status status;
 
-
 class Edge {
 public:
     Edge(const char &v1, const char &v2, const bool &fe, const int &rank, const int &world_size);
     void create_etour();
     void suffix_sum();
-    void preorder(const int nodes_count);
+    void print_preorder();
     int find(const vector<int> &vec, const int &val);
     ~Edge();
 

@@ -27,16 +27,81 @@
 
 \section{Přiřazení pořadí preorder vrcholům}
 \label{sec:preorder}
+Pro algoritmus přiřazení pořadí preorder vrcholům je potřeba vykonat následující kroky:
+\begin{itemize}
+     \item Vytvoření Eulerovy cesty
+     \item Vytvoření pole vah
+     \item Výpočet sumy sufixů
+     \item Korekce sumy sufixů
+ \end{itemize}
 
+Pro funkčnost agoritmu je potřeba spočítat Eulerovu cestu, kterou lze reprezentovat pomocí funkce následníka, t.j. každá hrana si pamatuje svou následující hranu. 
+Eulerova cesta je metoda reprezentace stromu pomocí orientovaného grafu kde každá hrana obsahuje dvě orientované hrany stromu. 
+Příklad eulerovy cesty je vidět na Obr. \ref{fig:ett}. 
+Následně je potřeba pole vah. 
+To lze vypočíst tak, že ke každé dopředé hraně dáme váhu 1 a ostatním váhu 0. 
+Suma sufixů lze vypočíst pomocí pole vah a pole Etour, reprezentující Eulerovu cestu.
+Pole Etour slouží k určení následníka (následujícího prvku) a výstupem je nové pole vah.
+Tyto váhy jsou pak upraveny tak, aby určovaly pořadí pro jednotlivé hrany. 
+Koncové body těchto seřazených hran a kořenový bod (který je označen zvlášť, jelikož není na výstupu) pak odpovídá výstupu pořadí preorder.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=.8]{img/ETT.png}
+    \caption{Příklad Eulerovy cesty}
+    \label{fig:ett}
+\end{figure}
 \subsection*{Celková cena}
 \label{sub:celkova_cena}
+Prostorová složitost se dá vyjádřit jako počet hran v orientvaném grafu binárního stromu a tedy:
+\begin{equation}
+    p(n) = 2n - 2 \rightarrow \mathcal{O}(n)
+\end{equation}
+Kde $n$ udává počet vrcholů binárního stromu a $p(n)$ udává potřebný počet procesorů. 
+Pro vytvoření eulerovy cesty se dají použít různé algoritmy. Pro tento projekt je použit cyklus pro vytvoření všech následníků dané hrany a tedy:
+\begin{equation}
+    t(n) = 2n- 2 \rightarrow \mathcal{O}(n)
+\end{equation}
+Kde $n$ udává počet vrcholů a $t(n)$ udává čas potřebný k provedení daného kroku.
+Vytvoření vah je jen jeden krok a tedy:
+\begin{equation}
+    t(n) = c \rightarrow \mathcal{O}(c)
+\end{equation}
+Kde $c$ je konstanta.
+Sumu sufixů musíme vypočítat pro každou hranu a tedy:
+\begin{equation}
+    t(n) = log(2n - 2) \rightarrow \mathcal{O}(log(n))
+\end{equation}
+Následná korekce sumy sufixů je provedena v konstantním čase:
+\begin{equation}
+    t(n) = c \rightarrow \mathcal{O}(c)
+\end{equation}
+Výsledná časová složitost odpovídá:
+\begin{equation}
+    \mathcal{O}(n) + \mathcal{O}(c) + \mathcal{O}(log(n)) + \mathcal{O}(c) = \mathcal{O}(n)
+\end{equation}
+Výsledná cena $c(n)$ je tedy:
+\begin{equation}
+    c(n) = p(n) * t(n) = \mathcal{O}(n^2)
+\end{equation}
 
 \section{Implementace}
 \label{sec:implementace}
-Algoritmus je implementován pomocí knihovny \texttt{OpenMPI}.
+Algoritmus je implementován pomocí knihovny \texttt{OpenMPI}. 
+Samotné hrany jsou reprezentovány jednotlivými procesy. 
+Pořadí procesů (\texttt{rank}) udává pozici hrany v grafu. 
+Procesy si vytvoří třídu \texttt{Edge}, která uchovává informace o hraně (číslo hrany, orientaci hrany, počáteční a koncový bod). 
+Jednotlivé hrany si následně vypočítají svého následníka pomocí funkce \texttt{create\_etour}. 
+Pomocí funkce \texttt{MPI\_Allgather} si procesy zjistí informace o ostatních hranách a každá hrana (proces) si najde svého následníka.
+
+Funkce \texttt{suffix\_sum} pak pomocí \texttt{MPI\_Allgather} simuluje sdílené pole vah a pole Etour (reprezentující Eulerovu cestu) a spočte paralelně pro každý proces odpovídající sumu sufixů pole vah.
+
+Každý proces si zapamatuje svou výslednou váhu a pomocí funkce \texttt{print\_preorder} si dopředné hrany získají hodnotu pořadí preorder daného uzlu. 
+Pořadí a odpovídající vrcholy pak posbírá první proces (pomocí \texttt{MPI\_Gather}), který vytiskne na výstup nejdříve kořenový uzel a poté zbytek stromu v pořadí preorder.
 
 \section{Závěr}
 \label{sec:závěr}
-
+Nejnáročnější operací, co se týče časové složitosti, je vytváření eulerovy cesty, což určuje výslednou časovou složitost. 
+Algoritmus vypisuje pořadí dle očekávání.
 
 \end{document}
